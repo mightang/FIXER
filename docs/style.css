@@ -1,0 +1,760 @@
+/* ===== 기본 리셋 & 전체 레이아웃 ===== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.app {
+  width: 100%;
+  max-width: 1280px;
+  height: 100vh;
+  display: flex;             /* 사이드바 + 콘텐츠 가로 배치 */
+  flex-direction: row;
+  background-color: #1e1e1e;
+  border-left: 1px solid #333;
+  border-right: 1px solid #333;
+}
+
+/* ===== 사이드바 ===== */
+.sidebar {
+  width: 220px;
+  background-color: #252526; /* VS Code 사이드바 톤 */
+  border-right: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.2s ease;
+}
+
+/* 접힌 상태: 얇은 레일처럼 보이게 */
+.app.sidebar-collapsed .sidebar {
+  width: 44px;
+}
+
+.sidebar-header {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  border-bottom: 1px solid #333;
+  gap: 6px;
+}
+
+/* (로고 여유) */
+.app.sidebar-collapsed .logo {
+  display: none;
+}
+
+/* ===== 사이드바 토글 버튼 (헤더 안에 일체형) ===== */
+.sidebar-toggle {
+  margin-left: auto;
+  border: none;
+  outline: none;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  background-color: #333;
+  color: #fff;
+  cursor: pointer;
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+
+.sidebar-toggle:hover {
+  opacity: 1;
+  background-color: #444;
+}
+
+/* 사이드바 내용 영역 */
+.nav-section {
+  padding: 12px 6px;
+  flex: 1;
+}
+
+/* 접힌 상태에선 네비게이션 전체를 숨김 */
+.app.sidebar-collapsed .nav-section {
+  display: none;
+}
+
+.nav-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #a0a0a0;
+  margin-bottom: 8px;
+  padding: 0 6px;
+  white-space: nowrap;
+}
+
+.app.sidebar-collapsed .nav-title {
+  display: none;
+}
+
+.nav-item {
+  width: 100%;
+  text-align: left;
+  border: none;
+  outline: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  background-color: transparent;
+  color: #cccccc;
+  cursor: pointer;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.nav-item:hover {
+  background-color: #373737;
+}
+
+.nav-item.active {
+  background-color: #094771;
+  color: #ffffff;
+}
+
+.app.sidebar-collapsed .nav-item-text {
+  display: none;
+}
+
+.sidebar-footer {
+  padding: 8px 10px;
+  font-size: 11px;
+  color: #9a9a9a;
+  border-top: 1px solid #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app.sidebar-collapsed .sidebar-footer {
+  display: none;
+}
+
+/* ===== 오른쪽 콘텐츠 영역 ===== */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.main {
+  flex: 1;
+  background-color: #1e1e1e;
+  display: flex;
+  flex-direction: column;
+  /* 아래 줄 추가 */
+  min-height: 0;
+}
+
+/* 위 코드를 이런 식으로 수정 */
+.panel {
+  /* 기본은 안 보이게 */
+  display: none;
+  padding: 16px 20px;
+  height: 100%;
+  box-sizing: border-box;
+  flex-direction: column;
+  /* 패널 안에서 스크롤이 생기고, 바깥(body)은 고정 */
+  overflow: hidden;
+}
+
+/* active일 때만 flex 컨테이너로 등장 */
+.panel.active {
+  display: flex;
+}
+
+.panel-title {
+  font-size: 20px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.panel-subtitle {
+  font-size: 13px;
+  color: #aaaaaa;
+  margin-bottom: 16px;
+}
+
+.placeholder-box {
+  margin-top: 8px;
+  border: 1px dashed #444;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 13px;
+  color: #888;
+}
+
+/* ===== 시각화 도구 전용 레이아웃 ===== */
+
+.visualizer-layout {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  /* 패널 안에서 나머지 공간을 모두 사용 */
+  flex: 1;
+  min-height: 0;
+  gap: 8px;
+}
+
+.visualizer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background-color: #252526;
+  border-radius: 4px;
+  border: 1px solid #333;
+}
+
+.toolbar-label {
+  font-size: 12px;
+  color: #cccccc;
+  margin-right: 4px;
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+/* 도구 버튼 스타일 */
+.tool-button {
+  border: none;
+  outline: none;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  background-color: #2d2d30;
+  color: #cccccc;
+  cursor: pointer;
+}
+
+.tool-button:hover:not(:disabled) {
+  background-color: #3e3e42;
+}
+
+.tool-button.active {
+  background-color: #007acc;
+  color: #ffffff;
+}
+
+.tool-button.danger {
+  background-color: #7a1f1f;
+  color: #ffffff;
+}
+
+.tool-button.danger:hover:not(:disabled) {
+  background-color: #a02929;
+}
+
+/* 비활성 버튼 */
+.tool-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* 캔버스 영역 */
+.canvas-wrapper {
+  flex: 1;
+  min-height: 260px;
+  border-radius: 6px;
+  border: 1px solid #cccccc;
+  background-color: #ffffff;
+  overflow: hidden;
+}
+
+#drawCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.visualizer-help {
+  font-size: 11px;
+  color: #999999;
+}
+
+/* ===== 문제풀이 기록 탭 레이아웃 (목록/에디터 단일 화면 전환) ===== */
+
+.history-layout {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* 목록 화면 */
+.history-list-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #252526;
+  border-radius: 4px;
+  border: 1px solid #333;
+  padding: 8px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.history-list-view.hidden {
+  display: none;
+}
+
+.history-header-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.history-count {
+  font-size: 12px;
+  color: #cccccc;
+}
+
+.history-header-row .history-button {
+  margin-left: auto;
+}
+
+/* 새 기록 버튼 + 모두 삭제 버튼 사이 간격 */
+.history-header-row .history-button + .history-button {
+  margin-left: 6px;
+}
+
+
+/* 리스트 */
+.history-list {
+  list-style: none;
+  margin-top: 4px;
+  padding: 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.history-list-item {
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  background-color: transparent;
+  border: 1px solid transparent;
+}
+
+.history-list-item:hover {
+  background-color: #333333;
+}
+
+.history-list-item.active {
+  background-color: #094771;
+  border-color: #007acc;
+}
+
+.history-list-title {
+  font-size: 13px;
+  color: #ffffff;
+  margin-bottom: 2px;
+}
+
+.history-list-meta {
+  font-size: 11px;
+  color: #bbbbbb;
+}
+
+/* 사이트 배지 */
+.history-site-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  margin-right: 4px;
+}
+
+.history-site-BOJ {
+  background-color: #1e3a8a;
+  color: #e5e7eb;
+}
+
+.history-site-Programmers {
+  background-color: #14532d;
+  color: #e5e7eb;
+}
+
+.history-site-LeetCode {
+  background-color: #92400e;
+  color: #fef3c7;
+}
+
+.history-list-hint {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* 에디터 화면 */
+.history-editor-view {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  background-color: #252526;
+  border-radius: 4px;
+  border: 1px solid #333;
+  padding: 10px 12px;
+  min-height: 0;
+}
+
+.history-editor-view.active {
+  display: flex;
+}
+
+.history-editor-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.history-editor-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #e5e7eb;
+}
+
+.history-editor-header .history-button {
+  margin-left: auto;
+}
+
+/* 에디터 내부 폼 */
+.history-editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.history-form-row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+}
+
+.history-form-row label {
+  font-size: 12px;
+  margin-bottom: 4px;
+  color: #e5e5e5;
+}
+
+.history-form-row input,
+.history-form-row select,
+.history-form-row textarea {
+  background-color: #1e1e1e;
+  border-radius: 4px;
+  border: 1px solid #444;
+  color: #f5f5f5;
+  font-size: 13px;
+  padding: 6px 8px;
+  outline: none;
+}
+
+.history-form-row input:focus,
+.history-form-row select:focus,
+.history-form-row textarea:focus {
+  border-color: #007acc;
+}
+
+.history-textarea-row {
+  flex: 1;
+}
+
+.history-textarea-row textarea {
+  flex: 1;
+  min-height: 160px;
+  resize: vertical;
+}
+
+/* 하단 버튼/상태 표시 */
+.history-actions {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-status {
+  font-size: 11px;
+  color: #9ca3af;
+  flex: 1;
+}
+
+.history-actions-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+/* 공통 버튼 스타일 */
+.history-button {
+  border: none;
+  outline: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.history-button.primary {
+  background-color: #007acc;
+  color: #ffffff;
+}
+
+.history-button.primary:hover {
+  background-color: #0b84d6;
+}
+
+.history-button.danger {
+  background-color: #7a1f1f;
+  color: #ffffff;
+}
+
+.history-button.danger:hover:not(:disabled) {
+  background-color: #a02929;
+}
+
+.history-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ===== 테스트 케이스 생성기 레이아웃 ===== */
+
+.testcase-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+}
+
+.testcase-form {
+  background-color: #252526;
+  border-radius: 4px;
+  border: 1px solid #333;
+  padding: 12px;
+}
+
+#tcStatement {
+  min-height: 140px;
+  resize: vertical;
+}
+
+#tcExampleRaw {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* 결과 영역은 아래쪽에서 남은 공간을 채우도록 */
+.testcase-output {
+  background-color: #252526;
+  border-radius: 4px;
+  border: 1px solid #333;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.tc-row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+}
+
+.tc-row-inline {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.tc-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.tc-row label,
+.tc-field label {
+  font-size: 12px;
+  margin-bottom: 4px;
+  color: #e5e5e5;
+}
+
+.tc-row input,
+.tc-row select,
+.tc-row textarea,
+.tc-field input,
+.tc-field select,
+.tc-field textarea {
+  background-color: #1e1e1e;
+  border-radius: 4px;
+  border: 1px solid #444;
+  color: #f5f5f5;
+  font-size: 13px;
+  padding: 6px 8px;
+  outline: none;
+}
+
+.tc-row input:focus,
+.tc-row select:focus,
+.tc-row textarea:focus,
+.tc-field input:focus,
+.tc-field select:focus,
+.tc-field textarea:focus {
+  border-color: #007acc;
+}
+
+.tc-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.tc-button {
+  border: none;
+  outline: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  background-color: #3a3d41;
+  color: #f9fafb;
+}
+
+.tc-button.primary {
+  background-color: #007acc;
+  color: #ffffff;
+}
+
+.tc-button.primary:hover {
+  background-color: #0b84d6;
+}
+
+.tc-button.small {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.tc-button:hover {
+  background-color: #4b4f54;
+}
+
+.tc-status {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.testcase-output-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.testcase-output-header span {
+  font-size: 12px;
+  color: #e5e5e5;
+}
+
+.testcase-output-header .tc-button {
+  margin-left: auto;
+}
+
+.testcase-output-body {
+  flex: 1;
+  border-radius: 4px;
+  border: 1px solid #333;
+  background-color: #1e1e1e;
+  padding: 8px;
+  overflow: auto;
+}
+
+#tcResult {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.tc-result-placeholder {
+  color: #9ca3af;
+}
+
+/* ===== 테스트 케이스 로딩 오버레이 ===== */
+
+.testcase-output-body {
+  flex: 1;
+  border-radius: 4px;
+  border: 1px solid #333;
+  background-color: #1e1e1e;
+  padding: 8px;
+  overflow: auto;
+  position: relative; /* 오버레이 기준 */
+}
+
+#tcResult {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* 기본 상태엔 옅은 색 (내용 없을 때) */
+.tc-result-placeholder {
+  color: #9ca3af;
+}
+
+/* 전체를 덮는 로딩 오버레이 */
+.tc-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;               /* 기본은 숨김 */
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+/* 로딩 중일 때 표시 */
+.tc-loading-overlay.visible {
+  display: flex;
+}
+
+/* 스피너 모양 */
+.tc-spinner {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 3px solid #4b4f54;
+  border-top-color: #0b84d6;
+  animation: tc-spin 0.8s linear infinite;
+}
+
+@keyframes tc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,27 @@
+# node_modules: 패키지 폴더 (용량 크고 다시 설치 가능)
+server/node_modules/
+
+# 환경 변수/비밀 키
+server/.env
+
+# npm 로그
+server/npm-debug.log*
+server/yarn-error.log*
+*.log
+
+# 만약 나중에 빌드 결과물 폴더 만들면 추가 (예: dist, build)
+dist/
+build/
+
+# 테스트 커버리지 등
+coverage/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# VSCode 설정(개인 세팅이라 굳이 올릴 필요 없음)
+.vscode/
