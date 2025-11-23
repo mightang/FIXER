@@ -4,6 +4,7 @@ import cors from "cors";
 import { PORT } from "./config/env.js";
 import testcasesRouter from "./routes/testcases.js";
 import solutionRouter from "./routes/solution.js";
+import runRouter from "./routes/run.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 
 const app = express();
@@ -20,17 +21,18 @@ app.use(express.json());
 
 // 간단 헬스 체크
 app.get("/", (req, res) => {
-  res.json({ ok: true, message: "알고리즘 도우미 백엔드 실행 중" });
+  res.json({ ok: true, message: "백엔드 서버 실행 중" });
 });
 
 // API 라우트
 app.use("/api/testcases", testcasesRouter);
 app.use("/api/solution", solutionRouter);
+app.use("/api/run", runRouter);
 
 // 에러 핸들러 (항상 마지막에)
 app.use(errorHandler);
 
 // 서버 시작
 app.listen(PORT, () => {
-  console.log(`✅ Backend server listening on http://localhost:${PORT}`);
+  console.log(`Backend server listening on http://localhost:${PORT}`);
 });
