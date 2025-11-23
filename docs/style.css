@@ -79,11 +79,8 @@ body {
 .nav-section {
   padding: 12px 6px;
   flex: 1;
-}
-
-/* 접힌 상태에선 네비게이션 전체를 숨김 */
-.app.sidebar-collapsed .nav-section {
-  display: none;
+  display: flex;
+  flex-direction: column;
 }
 
 .nav-title {
@@ -97,7 +94,7 @@ body {
 }
 
 .app.sidebar-collapsed .nav-title {
-  display: none;
+  visibility: hidden;
 }
 
 .nav-item {
@@ -112,10 +109,25 @@ body {
   color: #cccccc;
   cursor: pointer;
   margin-bottom: 4px;
-  display: flex;
+  display: flex;  
   align-items: center;
+  gap: 6px;    
   white-space: nowrap;
   overflow: hidden;
+}
+
+.nav-item-icon {
+  width: 20px;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 15px;
+}
+
+.nav-item-main {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 10px;
+  margin-bottom: 8px;
 }
 
 .nav-item:hover {
@@ -125,6 +137,75 @@ body {
 .nav-item.active {
   background-color: #094771;
   color: #ffffff;
+}
+
+/* 구분선 */
+.nav-divider {
+  border-top: 1px solid #333;
+  margin: 8px 6px 6px;
+}
+
+/* "오늘 푼 문제" 제목 */
+.nav-quick-title {
+  font-size: 11px;
+  color: #a0a0a0;
+  padding: 0 6px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+
+/* 퀵 리스트 컨테이너 */
+.nav-quick-list {
+  padding: 0 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* 퀵 버튼 하나 */
+.nav-quick-item {
+  border: none;
+  outline: none;
+  width: 100%;
+  text-align: left;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  background-color: #2d2d30;
+  color: #e5e5e5;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-quick-item:hover {
+  background-color: #3e3e42;
+}
+
+/* 오늘 기록 없을 때 문구 */
+.nav-quick-empty {
+  font-size: 11px;
+  color: #777777;
+  padding: 2px 0 0 0;
+}
+
+/* 접힌 사이드바일 때는 제목 숨김 */
+.app.sidebar-collapsed .nav-quick-title {
+  display: none;
+}
+
+/* 접힌 상태에서도 버튼은 아이콘처럼 좁게만 보이게 */
+.app.sidebar-collapsed .nav-quick-list {
+  padding: 0 4px 8px;
+}
+
+.app.sidebar-collapsed .nav-item-text {
+  display: none;
+}
+
+.app.sidebar-collapsed .nav-item {
+  justify-content: center;
 }
 
 .app.sidebar-collapsed .nav-item-text {
@@ -198,6 +279,174 @@ body {
   padding: 12px;
   font-size: 13px;
   color: #888;
+}
+
+/* ===== 코드 실행기 레이아웃 ===== */  
+.runner-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 0;      /* 위 여백 제거: 화면 꽉 차게 */
+  flex: 1;            /* 패널 전체 높이를 채움 */
+  min-height: 0;
+}
+
+.runner-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 코드 영역 / 콘솔 영역이 남는 공간을 반씩 나눠 쓰도록 */
+.runner-editor,
+.runner-console {
+  background-color: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;          /* <-- 핵심: 위아래로 크게 */
+  min-height: 0;
+}
+
+.runner-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-controls label {
+  font-size: 13px;
+  color: #cccccc;
+}
+
+.runner-controls select {
+  background-color: #3c3c3c;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #f0f0f0;
+  padding: 4px 6px;
+  font-size: 13px;
+}
+
+.runner-status {
+  font-size: 12px;
+  color: #cccccc;
+}
+
+.runner-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: #cccccc;
+}
+
+.runner-editor textarea,
+.runner-console textarea {
+  flex: 1;
+  min-height: 80px;
+  background-color: #1e1e1e;
+  color: #f0f0f0;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 8px;
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 13px;
+  resize: vertical;
+}
+
+.runner-editor textarea:focus,
+.runner-console textarea:focus {
+  outline: 1px solid #007acc;
+  border-color: #007acc;
+}
+
+.runner-console-io {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+
+.runner-console-io {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* 새 콘솔 전체 래퍼 */
+.runner-console-full {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* 콘솔 textarea도 에디터와 동일 스타일 */
+.runner-editor textarea,
+.runner-console textarea {
+  flex: 1;
+  min-height: 80px;
+  background-color: #1e1e1e;
+  color: #f0f0f0;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 8px;
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 13px;
+  resize: none;          /* VS 터미널 느낌으로 크기 고정 */
+}
+
+.runner-editor textarea:focus,
+.runner-console textarea:focus {
+  outline: 1px solid #007acc;
+  border-color: #007acc;
+}
+
+/* 코드 실행기 버튼 */
+.runner-button {
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  background-color: #0e639c;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.runner-button.small {
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+.runner-button.primary {
+  background-color: #0e639c;
+}
+
+.runner-button:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+/* 넓은 화면에서는 입력/출력을 좌우로 */
+@media (min-width: 960px) {
+  .runner-console-io {
+    flex-direction: row;
+  }
 }
 
 /* ===== 시각화 도구 전용 레이아웃 ===== */
@@ -756,5 +1005,130 @@ body {
 @keyframes tc-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+
+/* ==============================
+   풀이 힌트 패널
+============================== */
+.solution-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 8px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* 좌/우 영역을 테스트 케이스 카드처럼 */
+.solution-left,
+.solution-right {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background-color: #252526;
+  border-radius: 4px;
+  border: 1px solid #333;
+  padding: 12px;
+  min-height: 0;
+  flex: 1;
+}
+
+/* 왼쪽 텍스트 입력 박스 스타일 – tc와 통일 */
+.solution-left .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;        /* 카드 안의 나머지 공간을 차지 */
+  min-height: 0;
+}
+
+.solution-left label {
+  font-size: 12px;
+  color: #e5e5e5;
+}
+
+.solution-left textarea {
+  width: 100%;
+  flex: 1;        /* form-group 안에서 남는 높이를 모두 사용 */
+  min-height: 0;  /* 고정 min-height 대신 flex로 키움 */
+  resize: none;   /* 코드 실행기처럼 크기 고정 (원하면 유지) */
+  background-color: #1e1e1e;
+  border-radius: 4px;
+  border: 1px solid #444;
+  color: #f5f5f5;
+  font-size: 13px;
+  padding: 8px;
+  outline: none;
+}
+
+.solution-left textarea:focus {
+  border-color: #007acc;
+}
+
+/* 버튼 + 상태줄 */
+.solution-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* 오른쪽 결과 카드 헤더 */
+.solution-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.solution-result-header span {
+  font-size: 12px;
+  color: #e5e5e5;
+}
+
+/* 오른쪽 결과 영역 – tcOutput과 톤 맞춤 */
+.solution-result {
+  flex: 1;
+  border-radius: 4px;
+  border: 1px solid #333;
+  background-color: #1e1e1e;
+  padding: 8px;
+  overflow-y: auto;   /* 내용 많으면 여기서만 스크롤 */
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  position: relative;
+  padding: 10px 12px;
+}
+
+/* 타입/모드 배지 */
+.solution-result-type {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #e5e5e5;
+  margin-bottom: 0.5rem;
+}
+
+/* 본문/단계 리스트 */
+.solution-result-content {
+  margin-bottom: 0.5rem;
+}
+
+.solution-result-steps {
+  padding-left: 1.25rem;
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+}
+
+.solution-result-steps li + li {
+  margin-top: 0.25rem;
+}
+
+/* 좁은 화면에서는 세로로 쌓기 */
+@media (max-width: 900px) {
+  .solution-layout {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

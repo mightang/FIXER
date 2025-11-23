@@ -2,29 +2,34 @@
 // 탭 전환 & 사이드바 토글
 // ========================
 
+// 사이드바 내 탭 버튼들 (큰 버튼 + 미니 아이콘)
 // 사이드바 내 탭 버튼들
 const navItems = document.querySelectorAll(".nav-item");
-// 메인 패널들
 const panels = document.querySelectorAll(".panel");
 
-// 탭 전환
+function switchTab(targetId) {
+  // 네비 버튼 active
+  navItems.forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.tab === targetId);
+  });
+
+  // 패널 전환
+  panels.forEach((panel) => {
+    panel.classList.toggle("active", panel.id === targetId);
+  });
+
+  // 시각화 도구 들어올 때 캔버스 리사이즈
+  if (targetId === "visualizer") {
+    resizeCanvas();
+  }
+}
+
+// 탭 전환 이벤트 등록
 navItems.forEach((item) => {
   item.addEventListener("click", () => {
     const targetId = item.dataset.tab;
-
-    // 사이드바 탭 활성/비활성
-    navItems.forEach((i) => i.classList.remove("active"));
-    item.classList.add("active");
-
-    // 패널 전환
-    panels.forEach((panel) => {
-      panel.classList.toggle("active", panel.id === targetId);
-    });
-
-    // 시각화 도구 탭으로 돌아올 때 캔버스 크기 재조정
-    if (targetId === "visualizer") {
-      resizeCanvas();
-    }
+    if (!targetId) return;
+    switchTab(targetId);
   });
 });
 
@@ -222,6 +227,12 @@ function handleMouseMove(e) {
       currentFreehand.push({ x, y });
       previewShape = { type: "free", points: currentFreehand };
     }
+  } else if (currentTool === "text") {
+    const x1 = Math.min(startX, x);
+    const y1 = Math.min(startY, y);
+    const w = Math.abs(x - startX);
+    const h = Math.abs(y - startY);
+    previewShape = { type: "text", x: x1, y: y1, w, h, text: "" };
   }
 
   redraw(previewShape);
@@ -237,9 +248,15 @@ function handleMouseUp(e) {
   if (currentTool === "circle") {
     const dx = x - startX;
     const dy = y - startY;
-    const r = Math.sqrt(dx * dx + dy * dy);
-    if (r > 2) {
-      newShape = { type: "circle", cx: startX, cy: startY, r };
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist > 4) {
+      // 드래그해서 반지름을 정한 경우
+      newShape = { type: "circle", cx: startX, cy: startY, r: dist };
+    } else {
+      // 거의 움직이지 않은 경우 → "클릭"으로 간주, 고정 크기 원
+      const fixedRadius = 24; // 원하는 기본 크기
+      newShape = { type: "circle", cx: startX, cy: startY, r: fixedRadius };
     }
   } else if (currentTool === "rect") {
     const x1 = Math.min(startX, x);
@@ -260,6 +277,35 @@ function handleMouseUp(e) {
       newShape = { type: "free", points: currentFreehand.slice() };
     }
     currentFreehand = null;
+  } else if (currentTool === "text") {
+    const x1 = Math.min(startX, x);
+    const y1 = Math.min(startY, y);
+    let w = Math.abs(x - startX);
+    let h = Math.abs(y - startY);
+
+    // 거의 움직이지 않았으면 클릭으로 간주하고 기본 크기
+    if (w <= 4 && h <= 4) {
+      w = 120;
+      h = 40;
+    }
+
+    // 중심 기준으로 놓고 싶으면 다음 두 줄을 사용 (지금은 좌상단 기준으로 둬도 됨)
+    // const boxX = startX - w / 2;
+    // const boxY = startY - h / 2;
+    const boxX = x1;
+    const boxY = y1;
+
+    const text = window.prompt("텍스트 내용을 입력하세요:");
+    if (text && text.trim() !== "") {
+      newShape = {
+        type: "text",
+        x: boxX,
+        y: boxY,
+        w,
+        h,
+        text: text.trim(),
+      };
+    }
   }
 
   if (newShape) {
@@ -295,7 +341,7 @@ function hitTestShape(shape, x, y) {
     return dist <= shape.r + tolerance;
   }
 
-  if (shape.type === "rect") {
+  if (shape.type === "rect" || shape.type === "text") {
     return (
       x >= shape.x &&
       x <= shape.x + shape.w &&
@@ -383,10 +429,31 @@ function drawShape(shape, isPreview = false) {
       ctx.lineTo(shape.points[i].x, shape.points[i].y);
     }
     ctx.stroke();
+  } else if (shape.type === "text") {
+    if (isPreview) {
+    // 드래그 중일 때만 윤곽 박스로 보여 주기
+    ctx.setLineDash([4, 2]);
+    ctx.strokeRect(shape.x, shape.y, shape.w, shape.h);
+    ctx.setLineDash([]);
+    } else if (shape.text) {
+      // 실제로 그릴 때는 글자만
+      ctx.font = "14px system-ui, sans-serif";
+      ctx.fillStyle = "#000000";
+      const padding = 4;
+      const lineHeight = 16;
+      const lines = String(shape.text).split(/\r?\n/);
+
+      lines.forEach((line, idx) => {
+        const tx = shape.x + padding;
+        const ty = shape.y + padding + lineHeight * (idx + 1) - 4;
+        ctx.fillText(line, tx, ty);
+      });
+    }
   }
 
   ctx.restore();
 }
+
 
 // ========================
 // 문제풀이 기록 탭 - 블로그형 기록
@@ -407,11 +474,67 @@ const historyEditorView = document.getElementById("historyEditorView");
 const editorModeLabel = document.getElementById("editorModeLabel");
 const backToListBtn = document.getElementById("backToListBtn");
 const deleteAllBtn = document.getElementById("deleteAllBtn");
+const todayShortcutsEl = document.getElementById("todayHistoryShortcuts");
 
 const STORAGE_KEY = "algoHelperProblemNotes";
 
 let entries = []; // { id, site, title, content, createdAt, updatedAt }
 let selectedEntryId = null;
+
+// 오늘 날짜인지 확인하는 헬퍼
+function isTodayTimestamp(ts) {
+  if (!ts) return false;
+  const d = new Date(ts);
+  const now = new Date();
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
+}
+
+// 사이드바에 오늘 푼 문제 최대 5개 렌더링
+function renderTodayShortcuts() {
+  if (!todayShortcutsEl) return;
+
+  todayShortcutsEl.innerHTML = "";
+
+  if (!entries || entries.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "nav-quick-empty";
+    empty.textContent = "오늘 기록 없음";
+    todayShortcutsEl.appendChild(empty);
+    return;
+  }
+
+  const todayEntries = entries
+    .filter((e) => isTodayTimestamp(e.createdAt))
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .slice(0, 5);
+
+  if (todayEntries.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "nav-quick-empty";
+    empty.textContent = "오늘 기록 없음";
+    todayShortcutsEl.appendChild(empty);
+    return;
+  }
+
+  todayEntries.forEach((entry) => {
+    const btn = document.createElement("button");
+    btn.className = "nav-quick-item";
+    btn.textContent = entry.title || "(제목 없음)";
+    btn.title = `${entry.site || ""} ${entry.title || ""}`.trim();
+
+    btn.addEventListener("click", () => {
+      // 탭을 문제풀이 기록으로 전환하고 해당 글 열기
+      switchTab("history");
+      selectEntry(entry.id);
+    });
+
+    todayShortcutsEl.appendChild(btn);
+  });
+}
 
 // -------- 화면 전환 --------
 function showListView() {
@@ -503,6 +626,7 @@ function renderHistoryList() {
     });
 
   updateHistoryCount();
+  renderTodayShortcuts();
 }
 
 // 기록 개수 표시
@@ -700,8 +824,15 @@ const tcStatusEl = document.getElementById("tcStatus");
 const tcResultEl = document.getElementById("tcResult");
 const tcLoadingOverlay = document.getElementById("tcLoadingOverlay");
 
-// 백엔드 주소 (로컬 개발용)
-const API_BASE = "http://localhost:3000";
+// 백엔드 주소
+// - 로컬에서 index.html 열고 테스트할 때: localhost:3000
+// - GitHub Pages 등 배포본에서는 Render 서버 주소 사용
+const API_BASE =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1"
+    ? "http://localhost:3000"
+    : "https://fixer-backend-xj93.onrender.com";
+
 
 function setTcStatus(msg) {
   if (tcStatusEl) tcStatusEl.textContent = msg || "";
@@ -843,5 +974,249 @@ if (tcCopyBtn && tcResultEl) {
         console.error(err);
         setTcStatus("복사 중 오류가 발생했습니다.");
       });
+  });
+}
+
+
+// ----- 코드 실행기 요소 -----
+const runnerLanguageEl = document.getElementById("runnerLanguage");
+const runnerSourceEl = document.getElementById("runnerSource");
+const runnerConsoleEl = document.getElementById("runnerConsole");
+const runnerRunBtn = document.getElementById("runnerRunBtn");
+const runnerClearConsoleBtn = document.getElementById("runnerClearConsoleBtn");
+const runnerStatusEl = document.getElementById("runnerStatus");
+
+function setRunnerStatus(msg) {
+  if (runnerStatusEl) runnerStatusEl.textContent = msg || "";
+}
+
+// 콘솔 지우기 버튼
+if (runnerClearConsoleBtn && runnerConsoleEl) {
+  runnerClearConsoleBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    runnerConsoleEl.value = "";
+    setRunnerStatus("");
+  });
+}
+
+
+// 코드 실행 버튼
+if (runnerRunBtn && runnerLanguageEl && runnerSourceEl && runnerConsoleEl) {
+  runnerRunBtn.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    const language = runnerLanguageEl.value || "cpp";
+    const source = runnerSourceEl.value || "";
+    const consoleText = runnerConsoleEl.value || "";
+
+    if (!source.trim()) {
+      setRunnerStatus("코드를 입력해 주세요.");
+      return;
+    }
+
+    setRunnerStatus("코드 실행 중...");
+    runnerRunBtn.disabled = true;
+    const originalText = runnerRunBtn.textContent;
+    runnerRunBtn.textContent = "실행 중...";
+
+    try {
+      // 콘솔 전체 내용을 stdin으로 사용
+      const stdin = consoleText;
+
+      const res = await fetch(`${API_BASE}/api/run`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ language, source, stdin }),
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !data || data.ok === false) {
+        const msg =
+          (data && data.message) ||
+          `코드 실행 실패 (HTTP ${res.status})`;
+        throw new Error(msg);
+      }
+
+      // 출력 문자열 구성
+      const parts = [];
+      if (data.stdout) {
+        parts.push(String(data.stdout));
+      }
+      if (data.stderr) {
+        parts.push("\n[stderr]\n" + String(data.stderr));
+      }
+      if (!parts.length) {
+        parts.push("(출력 없음)");
+      }
+
+      const footer = `\n(exit code: ${
+        data.statusCode ?? "?"
+      }, time: ${data.cpuTime ?? "?"}s, memory: ${data.memory ?? "?"} KB)`;
+
+      // 기존 콘솔 내용 뒤에 결과를 이어 붙임
+      let newConsole = consoleText;
+      if (newConsole && !newConsole.endsWith("\n")) {
+        newConsole += "\n";
+      }
+      newConsole += "\n[출력]\n" + parts.join("") + "\n" + footer + "\n";
+
+      runnerConsoleEl.value = newConsole;
+      runnerConsoleEl.scrollTop = runnerConsoleEl.scrollHeight;
+
+      setRunnerStatus("실행 완료.");
+    } catch (err) {
+      console.error(err);
+      let newConsole = consoleText;
+      if (newConsole && !newConsole.endsWith("\n")) {
+        newConsole += "\n";
+      }
+      newConsole +=
+        "\n[오류]\n" +
+        ((err && err.message) || "코드 실행 중 오류가 발생했습니다.") +
+        "\n";
+      runnerConsoleEl.value = newConsole;
+      runnerConsoleEl.scrollTop = runnerConsoleEl.scrollHeight;
+      setRunnerStatus("실행 중 오류가 발생했습니다.");
+    } finally {
+      runnerRunBtn.disabled = false;
+      runnerRunBtn.textContent = originalText;
+    }
+  });
+}
+
+
+// ==============================
+// 풀이 힌트 패널
+// ==============================
+// ==============================
+// 풀이 힌트 패널
+// ==============================
+const solDescriptionEl = document.getElementById("solDescription");
+const solRequestBtn = document.getElementById("solRequestBtn");
+const solStatusEl = document.getElementById("solStatus");
+const solResultEl = document.getElementById("solResult");
+const solClearBtn = document.getElementById("solClearBtn");
+const solLoadingOverlay = document.getElementById("solLoadingOverlay");
+
+function setSolutionStatus(msg, isError = false) {
+  if (!solStatusEl) return;
+  solStatusEl.textContent = msg || "";
+  solStatusEl.classList.toggle("error", !!isError);
+}
+
+function renderSolution(result) {
+  if (!solResultEl) return;
+  solResultEl.innerHTML = "";
+
+  if (!result || !result.content) {
+    solResultEl.textContent = "결과를 불러오지 못했습니다.";
+    return;
+  }
+
+  const type = result.mode || result.responseType || "outline";
+
+  const header = document.createElement("div");
+  header.className = "solution-result-type";
+  header.textContent =
+    type === "full"
+      ? "모드: 상세 풀이"
+      : type === "hint"
+      ? "모드: 가벼운 힌트"
+      : "모드: 풀이 개요";
+
+  const content = document.createElement("p");
+  content.className = "solution-result-content";
+  content.textContent = result.content;
+
+  solResultEl.appendChild(header);
+  solResultEl.appendChild(content);
+
+  if (Array.isArray(result.steps) && result.steps.length > 0) {
+    const ul = document.createElement("ol");
+    ul.className = "solution-result-steps";
+
+    result.steps.forEach((step) => {
+      const li = document.createElement("li");
+      li.textContent = step;
+      ul.appendChild(li);
+    });
+
+    solResultEl.appendChild(ul);
+  }
+}
+
+if (solRequestBtn && solDescriptionEl) {
+  solRequestBtn.addEventListener("click", async () => {
+    const description = solDescriptionEl.value.trim();
+    if (!description) {
+      alert("문제 전문을 먼저 입력해 주세요.");
+      return;
+    }
+
+    setSolutionStatus("AI에게 풀이 힌트를 요청 중입니다...", false);
+
+    // 이전 결과 잠깐 비우고 로딩 오버레이 켜기
+    if (solResultEl) {
+      solResultEl.innerHTML = "";
+    }
+    if (solLoadingOverlay) {
+      solLoadingOverlay.classList.add("visible");
+    }
+
+    try {
+      const body = {
+        description,
+        mode: "outline", // 항상 '풀이 개요'
+      };
+
+      const resp = await fetch(`${API_BASE}/api/solution`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!resp.ok) {
+        setSolutionStatus(`HTTP 오류: ${resp.status}`, true);
+        return;
+      }
+
+      const data = await resp.json();
+      if (!data.ok) {
+        setSolutionStatus(data.message || "풀이 힌트 생성 실패", true);
+        return;
+      }
+
+      setSolutionStatus("풀이 힌트를 불러왔습니다.", false);
+      renderSolution(data);
+    } catch (err) {
+      console.error(err);
+      setSolutionStatus("요청 중 오류가 발생했습니다.", true);
+      if (solResultEl) {
+        solResultEl.textContent =
+          "풀이 힌트를 불러오는 중 오류가 발생했습니다.\n잠시 후 다시 시도해 주세요.";
+      }
+    } finally {
+      // 성공/실패와 상관없이 로딩 끄기
+      if (solLoadingOverlay) {
+        solLoadingOverlay.classList.remove("visible");
+      }
+    }
+  });
+}
+
+if (solClearBtn && solDescriptionEl && solResultEl) {
+  solClearBtn.addEventListener("click", () => {
+    solDescriptionEl.value = "";
+    solResultEl.innerHTML =
+      '<p class="solution-placeholder">왼쪽에 문제를 붙여 넣고 "풀이 힌트 요청"을 누르면, 여기에서 단계별 설명을 확인할 수 있습니다.</p>';
+    setSolutionStatus("");
+    if (solLoadingOverlay) {
+      solLoadingOverlay.classList.remove("visible"); // 추가
+    }
   });
 }

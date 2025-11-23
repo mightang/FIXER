@@ -18,27 +18,108 @@
 
       <nav class="nav-section">
         <div class="nav-title">탭</div>
-        <button class="nav-item active" data-tab="visualizer">
+
+        <!-- 메인: 코드 실행기 -->
+        <button class="nav-item nav-item-main active" data-tab="runner">
+          <span class="nav-item-icon">🖥</span>
+          <span class="nav-item-text">코드 실행기</span>
+        </button>
+
+        <button class="nav-item" data-tab="visualizer">
+          <span class="nav-item-icon">🎨</span>
           <span class="nav-item-text">시각화 도구</span>
         </button>
+
         <button class="nav-item" data-tab="testcase">
+          <span class="nav-item-icon">🧪</span>
           <span class="nav-item-text">테스트 케이스 생성기</span>
         </button>
+
+        <button class="nav-item" data-tab="solution">
+          <span class="nav-item-icon">💡</span>
+          <span class="nav-item-text">풀이 힌트</span>
+        </button>
+
         <button class="nav-item" data-tab="history">
+          <span class="nav-item-icon">📝</span>
           <span class="nav-item-text">문제풀이 기록</span>
         </button>
-      </nav>
 
-      <div class="sidebar-footer">
-        기본 구조만 구현된 상태
-      </div>
+        <div class="nav-divider"></div>
+        <div class="nav-quick-title">오늘 푼 문제</div>
+        <div id="todayHistoryShortcuts" class="nav-quick-list">
+          <div class="nav-quick-empty">오늘 기록 없음</div>
+        </div>
+      </nav>
     </aside>
 
     <!-- 오른쪽 메인 영역 -->
     <div class="content">
       <main class="main">
+        <!-- 코드 실행기 패널 -->
+        <section class="panel active" id="runner">
+          <div class="runner-layout">
+            <!-- 언어 선택 + 실행 버튼 -->
+            <div class="runner-controls">
+              <label for="runnerLanguage">언어</label>
+              <select id="runnerLanguage">
+                <option value="c">C</option>
+                <option value="cpp" selected>C/C++</option>
+                <option value="python">Python</option>
+                <option value="java">Java</option>
+              </select>
+
+              <button id="runnerRunBtn" class="runner-button primary">
+                실행
+              </button>
+
+              <span id="runnerStatus" class="runner-status"></span>
+            </div>
+
+            <!-- 코드 / 콘솔 영역 -->
+            <div class="runner-main">
+              <!-- 코드 편집기 -->
+              <div class="runner-editor">
+                <div class="runner-section-header">
+                  <span>코드</span>
+                </div>    
+                <textarea
+                  id="runnerSource"
+                  spellcheck="false"
+                  placeholder="// 여기에 코드를 입력하거나, '기본 코드 넣기' 버튼을 눌러 예제 코드를 불러올 수 있습니다."
+                ></textarea>
+              </div>
+
+              <!-- 콘솔 (입출력 통합) -->
+              <div class="runner-console">
+                <div class="runner-section-header">
+                  <span>콘솔</span>
+                  <button
+                    id="runnerClearConsoleBtn"
+                    class="runner-button small"
+                    type="button"
+                  >
+                    콘솔 지우기
+                  </button>
+                </div>
+
+                <div class="runner-console-io">
+                  <div class="runner-console-full">
+                    <label for="runnerConsole">터미널</label>
+                    <textarea
+                      id="runnerConsole"
+                      spellcheck="false"
+                      placeholder="여기에 입력을 작성하고 실행하면, 바로 아래에 출력 결과가 이어서 표시됩니다.&#10;예:&#10;1 2"
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- 시각화 도구 패널 -->
-        <section class="panel active" id="visualizer">
+        <section class="panel" id="visualizer">
           <h1 class="panel-title">시각화 도구</h1>
           <p class="panel-subtitle">
             정렬, 그래프, DP 등 알고리즘을 단계별로 시각화할 공간입니다.
@@ -47,6 +128,7 @@
           <div class="visualizer-layout">
             <div class="visualizer-toolbar">
               <span class="toolbar-label">도형 도구</span>
+              <button class="tool-button" data-tool="text">텍스트</button>
               <button class="tool-button active" data-tool="circle">정점(원)</button>
               <button class="tool-button" data-tool="rect">직사각형</button>
               <button class="tool-button" data-tool="line">간선(직선)</button>
@@ -142,12 +224,59 @@
           </div>
         </section>
 
+        <!-- 풀이 힌트 패널 -->
+        <section class="panel" id="solution">
+          <h1 class="panel-title">풀이 힌트</h1>
+          <p class="panel-subtitle">
+            문제 전문을 붙여 넣으면, 정답 코드 대신 로직/풀이 아이디어를 단계별로 설명해 줍니다.
+          </p>
+
+          <div class="solution-layout">
+            <div class="solution-left">
+              <div class="solution-actions">
+                <button id="solRequestBtn" class="runner-button primary">
+                  풀이 힌트 요청
+                </button>
+                <span id="solStatus" class="runner-status"></span>
+              </div>
+
+              <div class="form-group">
+                <label for="solDescription">문제 전문</label>
+                <textarea
+                  id="solDescription"
+                  rows="14"
+                  spellcheck="false"
+                  placeholder="문제 설명 / 입력 및 출력 형식 / 제약 조건을 그대로 붙여 넣어 주세요."
+                ></textarea>
+              </div>
+            </div>
+
+            <div class="solution-right">
+              <div class="solution-result-header">
+                <span>AI 풀이 힌트</span>
+                <button
+                  id="solClearBtn"
+                  class="runner-button small"
+                  type="button"
+                >
+                  내용 지우기
+                </button>
+              </div>
+
+              <div class="solution-result" id="solResult">
+                <div id="solLoadingOverlay" class="tc-loading-overlay">
+                  <div class="tc-spinner"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <!-- 문제풀이 기록 패널 -->
         <section class="panel" id="history">
           <h1 class="panel-title">문제풀이 기록</h1>
           <p class="panel-subtitle">
-            BOJ / Programmers / LeetCode 등에서 푼 문제를
+            내가 푼 알고리즘 문제를
             블로그 글처럼 정리하고 수정·삭제할 수 있는 공간입니다.
           </p>
 
