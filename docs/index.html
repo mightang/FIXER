@@ -11,6 +11,7 @@
     <!-- 왼쪽 사이드바 -->
     <aside class="sidebar">
       <div class="sidebar-header">
+        <div class="logo">FIXER</div>
         <button class="sidebar-toggle" id="sidebarToggle" aria-label="사이드바 토글">
           ⮜
         </button>
@@ -20,7 +21,7 @@
         <div class="nav-title">탭</div>
 
         <!-- 메인: 코드 실행기 -->
-        <button class="nav-item nav-item-main active" data-tab="runner">
+        <button class="nav-item nav-item-main" data-tab="runner">
           <span class="nav-item-icon">🖥</span>
           <span class="nav-item-text">코드 실행기</span>
         </button>
@@ -51,22 +52,36 @@
           <div class="nav-quick-empty">오늘 기록 없음</div>
         </div>
       </nav>
+
+      <!-- 사이드바 하단: 로그인 사용자 정보 + 로그아웃 -->
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar" id="sidebarUserAvatar">?</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="sidebarUserName">로그인하지 않음</div>
+            <div class="sidebar-user-email" id="sidebarUserEmail"></div>
+          </div>
+        </div>
+        <button id="logoutBtn" class="sidebar-logout-btn" style="display: none;">
+          로그아웃
+        </button>
+      </div>
     </aside>
 
     <!-- 오른쪽 메인 영역 -->
     <div class="content">
       <main class="main">
         <!-- 코드 실행기 패널 -->
-        <section class="panel active" id="runner">
+        <section class="panel" id="runner">
           <div class="runner-layout">
             <!-- 언어 선택 + 실행 버튼 -->
             <div class="runner-controls">
               <label for="runnerLanguage">언어</label>
               <select id="runnerLanguage">
                 <option value="c">C</option>
-                <option value="cpp" selected>C/C++</option>
-                <option value="python">Python</option>
-                <option value="java">Java</option>
+                <option value="cpp" selected>C++</option>
+                <option value="java">JAVA</option>
+                <option value="python">python</option>
               </select>
 
               <button id="runnerRunBtn" class="runner-button primary">
@@ -82,7 +97,14 @@
               <div class="runner-editor">
                 <div class="runner-section-header">
                   <span>코드</span>
-                </div>    
+                  <button
+                    id="runnerTemplateBtn"
+                    class="runner-button small"
+                    type="button"
+                  >
+                    기본 코드 넣기
+                  </button>
+                </div>
                 <textarea
                   id="runnerSource"
                   spellcheck="false"
@@ -288,7 +310,7 @@
                 <button id="newEntryBtn" class="history-button primary">
                   새 기록
                 </button>
-                <button id="deleteAllBtn" class="history-button danger">
+                <button id="deleteAllBtn" type="button" class="history-button danger">
                   모두 삭제
                 </button>
               </div>
@@ -342,14 +364,10 @@
                 <div class="history-actions">
                   <span id="historyStatus" class="history-status"></span>
                   <div class="history-actions-buttons">
-                    <button id="saveEntryBtn" class="history-button primary">
+                    <button id="saveEntryBtn" type="button" class="history-button primary">
                       저장
                     </button>
-                    <button
-                      id="deleteEntryBtn"
-                      class="history-button danger"
-                      disabled
-                    >
+                    <button id="deleteEntryBtn" type="button" class="history-button danger" disabled>
                       삭제
                     </button>
                   </div>

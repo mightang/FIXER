@@ -3,11 +3,19 @@
 // ========================
 
 // 사이드바 내 탭 버튼들 (큰 버튼 + 미니 아이콘)
-// 사이드바 내 탭 버튼들
 const navItems = document.querySelectorAll(".nav-item");
 const panels = document.querySelectorAll(".panel");
 
+// 현재 탭을 저장해 둘 키
+const TAB_STORAGE_KEY = "fixerActiveTab";
+
 function switchTab(targetId) {
+  // 존재하지 않는 id가 들어오면 안전하게 runner로 되돌리기
+  const validIds = Array.from(panels).map((p) => p.id);
+  if (!validIds.includes(targetId)) {
+    targetId = "runner";
+  }
+
   // 네비 버튼 active
   navItems.forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.tab === targetId);
@@ -17,6 +25,13 @@ function switchTab(targetId) {
   panels.forEach((panel) => {
     panel.classList.toggle("active", panel.id === targetId);
   });
+
+  // 현재 탭을 localStorage에 기억해 둠
+  try {
+    window.localStorage.setItem(TAB_STORAGE_KEY, targetId);
+  } catch (e) {
+    // localStorage 사용 불가해도 그냥 무시
+  }
 
   // 시각화 도구 들어올 때 캔버스 리사이즈
   if (targetId === "visualizer") {
@@ -32,6 +47,7 @@ navItems.forEach((item) => {
     switchTab(targetId);
   });
 });
+
 
 // 사이드바 토글
 const appRoot = document.querySelector(".app");
@@ -692,9 +708,10 @@ if (backToListBtn) {
   });
 }
 
-// 저장 버튼
 if (saveEntryBtn) {
-  saveEntryBtn.addEventListener("click", () => {
+  saveEntryBtn.addEventListener("click", async (e) => {
+    e.preventDefault();
+
     if (!entryTitleEl || !entryContentEl || !entrySiteEl) return;
 
     const site = entrySiteEl.value || "BOJ";
@@ -708,10 +725,13 @@ if (saveEntryBtn) {
 
     const now = Date.now();
 
-    if (selectedEntryId === null) {
-      // 새 기록
+    // 1) localStorage 먼저 반영
+    let currentEntry = null;
+    const isNew = selectedEntryId === null;
+
+    if (isNew) {
       const newEntry = {
-        id: now + Math.random(),
+        id: now + Math.random(), // 일단 임시 ID (로그인 안 했을 수도 있으니까)
         site,
         title,
         content,
@@ -719,21 +739,19 @@ if (saveEntryBtn) {
         updatedAt: now,
       };
       entries.push(newEntry);
-      saveEntries();
+      currentEntry = newEntry;
       selectedEntryId = newEntry.id;
       setStatus("새 문제풀이 기록이 저장되었습니다.");
     } else {
-      // 기존 기록 업데이트
       const entry = entries.find((e) => e.id === selectedEntryId);
       if (entry) {
         entry.site = site;
         entry.title = title;
         entry.content = content;
         entry.updatedAt = now;
-        saveEntries();
+        currentEntry = entry;
         setStatus("기존 문제풀이 기록이 업데이트되었습니다.");
       } else {
-        // 리스트에서 사라져 있었다면 새로 생성
         const newEntry = {
           id: now + Math.random(),
           site,
@@ -743,38 +761,98 @@ if (saveEntryBtn) {
           updatedAt: now,
         };
         entries.push(newEntry);
-        saveEntries();
+        currentEntry = newEntry;
         selectedEntryId = newEntry.id;
         setStatus("새 문제풀이 기록이 저장되었습니다.");
       }
     }
 
+    saveEntries();
     renderHistoryList();
-    // 저장이 끝나면 자동으로 목록 화면으로 돌아가기
-    showListView();
+    setStatus("문제풀이 기록이 저장되었습니다.");
+
+    // 2) 서버와 동기화
+    try {
+      // 로그인 안 된 경우 401 → catch로 떨어짐, localStorage만 유지
+      if (currentEntry && Number.isInteger(currentEntry.id)) {
+        // 이미 DB에서 가져온 기록 (id가 정수) → 수정으로 취급
+        const updated = await updateStudyLogOnServer(currentEntry.id, {
+          problemId: currentEntry.title,
+          title: currentEntry.title,
+          language: currentEntry.site,
+          code: currentEntry.content,
+          isSolved: false,
+        });
+        currentEntry.updatedAt = new Date(updated.updated_at).getTime();
+      } else {
+        // 새로 만든 로컬 기록 → DB에 생성 요청
+        const created = await saveStudyLog({
+          problemId: currentEntry.title,
+          title: currentEntry.title,
+          language: currentEntry.site,
+          code: currentEntry.content,
+          isSolved: false,
+        });
+        // 응답으로 받은 DB id / 날짜로 로컬 엔트리 교체
+        currentEntry.id = created.id;
+        currentEntry.createdAt = new Date(created.created_at).getTime();
+        currentEntry.updatedAt = new Date(created.updated_at).getTime();
+        selectedEntryId = created.id;
+      }
+
+      saveEntries();
+      renderHistoryList();
+    } catch (err) {
+      console.warn("서버 학습 기록 저장/수정 실패(로그인 안 되어 있거나 에러):", err);
+    }
   });
 }
 
-// 삭제 버튼
 if (deleteEntryBtn) {
-  deleteEntryBtn.addEventListener("click", () => {
-    if (selectedEntryId === null) return;
-    const ok = confirm("이 문제풀이 기록을 삭제할까요?");
+  deleteEntryBtn.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    if (selectedEntryId === null) {
+      setStatus("삭제할 기록을 먼저 선택하세요.");
+      return;
+    }
+
+    const entry = entries.find((e) => e.id === selectedEntryId);
+    if (!entry) {
+      setStatus("이미 삭제되었거나 찾을 수 없는 기록입니다.");
+      return;
+    }
+
+    const ok = confirm("현재 보고 있는 문제풀이 기록을 삭제할까요?");
     if (!ok) return;
 
-    entries = entries.filter((e) => e.id !== selectedEntryId);
+    // 1) 로컬에서 삭제
+    const deleteId = entry.id;
+    entries = entries.filter((e) => e.id !== deleteId);
     saveEntries();
-    setStatus("문제풀이 기록이 삭제되었습니다.");
+
     selectedEntryId = null;
     renderHistoryList();
     prepareEditorForNew();
     showListView();
+    setStatus("선택한 기록이 삭제되었습니다.");
+    switchTab("history");
+
+    // 2) 서버에서도 삭제 시도 (로그인 안 되어 있으면 401)
+    try {
+      if (Number.isInteger(deleteId)) {
+        await deleteStudyLogOnServer(deleteId);
+      }
+    } catch (err) {
+      console.warn("서버 학습 기록 삭제 실패:", err);
+    }
   });
 }
 
-// 모두 삭제 버튼
 if (deleteAllBtn) {
-  deleteAllBtn.addEventListener("click", () => {
+  deleteAllBtn.addEventListener("click", async (e) => {
+    e.preventDefault();
+    
     if (entries.length === 0) {
       setStatus("삭제할 기록이 없습니다.");
       return;
@@ -785,27 +863,69 @@ if (deleteAllBtn) {
     );
     if (!ok) return;
 
-    // 전체 기록 비우기
+    // 1) 로컬 전체 삭제
     entries = [];
     saveEntries();
 
-    // 선택 상태/에디터 초기화
     selectedEntryId = null;
     renderHistoryList();
     prepareEditorForNew();
     showListView();
     setStatus("모든 문제풀이 기록이 삭제되었습니다.");
+    switchTab("history");
+
+    // 2) 서버 전체 삭제 시도
+    try {
+      await deleteAllStudyLogsOnServer();
+    } catch (err) {
+      console.warn("서버 전체 학습 기록 삭제 실패:", err);
+    }
   });
 }
 
 // 초기화: 페이지 로드시 기록 불러오기
-(function initHistoryTab() {
+async function initHistoryTab() {
   if (!historyListEl) return; // 해당 탭이 없으면 무시
+
+  // 1) 기존처럼 localStorage에서 먼저 로드
   loadEntries();
+
+  // 2) 서버에 로그인되어 있다면, DB에서 학습 기록 불러오기
+  try {
+    const logs = await fetchStudyLogs(); // GET /api/study-logs
+
+    const serverEntries = logs.map((log) => {
+      // DB에서 오는 created_at / updated_at은 문자열이니까
+      // 나중에 정렬/“오늘 기록” 체크하려면 숫자로 바꿔줘야 함
+      const createdTs = log.created_at
+        ? new Date(log.created_at).getTime()
+        : Date.now();
+      const updatedTs = log.updated_at
+        ? new Date(log.updated_at).getTime()
+        : createdTs;
+
+      return {
+        id: log.id,                     // DB id
+        site: log.language || "BOJ",    // language 없으면 BOJ
+        title: log.title || log.problem_id || "(제목 없음)",
+        content: log.code || "",
+        createdAt: createdTs,
+        updatedAt: updatedTs,
+      };
+    });
+
+    // 🔥 서버 응답이 성공했다면, 길이가 0이어도 무조건 서버 상태로 덮어쓰기
+    entries = serverEntries;
+    saveEntries(); // 브라우저에도 캐싱
+  } catch (err) {
+    // 로그인 안 됐거나(401), 서버 에러면 그냥 localStorage 것만 사용
+    console.warn("서버 학습 기록 불러오기 실패:", err);
+  }
+
   renderHistoryList();
   prepareEditorForNew();
   showListView(); // 첫 화면은 목록 모드
-})();
+}
 
 
 // =====================
@@ -836,6 +956,84 @@ const API_BASE =
 
 function setTcStatus(msg) {
   if (tcStatusEl) tcStatusEl.textContent = msg || "";
+}
+
+const AUTH_BASE = API_BASE; // 편의상 별칭
+
+async function updateLoginStatus() {
+  const nameEl = document.getElementById("sidebarUserName");
+  const emailEl = document.getElementById("sidebarUserEmail");
+  const avatarEl = document.getElementById("sidebarUserAvatar");
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  if (!nameEl || !logoutBtn) return;
+
+  try {
+    const res = await fetch(`${AUTH_BASE}/auth/me`, {
+      credentials: "include", // 세션 쿠키 포함
+    });
+    const data = await res.json();
+
+    if (data.loggedIn && data.user) {
+      const name =
+        data.user.name ||
+        data.user.displayName ||
+        data.user.email ||
+        "로그인 사용자";
+      const email = data.user.email || "";
+
+      nameEl.textContent = name;
+      if (emailEl) emailEl.textContent = email;
+
+      if (avatarEl) {
+        // 나중에 백엔드에서 picture 필드 보내면 여기서 사용
+        if (data.user.picture) {
+          avatarEl.style.backgroundImage = `url(${data.user.picture})`;
+          avatarEl.classList.add("has-image");
+          avatarEl.textContent = "";
+        } else {
+          avatarEl.style.backgroundImage = "none";
+          avatarEl.classList.remove("has-image");
+          avatarEl.textContent = name.charAt(0).toUpperCase();
+        }
+      }
+
+      logoutBtn.style.display = "inline-flex";
+    } else {
+      nameEl.textContent = "로그인하지 않음";
+      if (emailEl) emailEl.textContent = "";
+      if (avatarEl) {
+        avatarEl.style.backgroundImage = "none";
+        avatarEl.classList.remove("has-image");
+        avatarEl.textContent = "?";
+      }
+      logoutBtn.style.display = "none";
+    }
+  } catch (err) {
+    console.error("로그인 상태 확인 실패:", err);
+    nameEl.textContent = "로그인 상태 확인 실패";
+    if (emailEl) emailEl.textContent = "";
+    if (avatarEl) {
+      avatarEl.style.backgroundImage = "none";
+      avatarEl.classList.remove("has-image");
+      avatarEl.textContent = "!";
+    }
+    logoutBtn.style.display = "none";
+  }
+}
+
+async function logout() {
+  try {
+    await fetch(`${AUTH_BASE}/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+    });
+  } catch (err) {
+    console.error("로그아웃 실패:", err);
+  } finally {
+    // 어쨌든 UI는 다시 체크
+    updateLoginStatus();
+  }
 }
 
 // 서버에서 받은 cases 배열을 보기 좋은 텍스트로 변환
@@ -986,6 +1184,48 @@ const runnerRunBtn = document.getElementById("runnerRunBtn");
 const runnerClearConsoleBtn = document.getElementById("runnerClearConsoleBtn");
 const runnerStatusEl = document.getElementById("runnerStatus");
 
+// 언어별 기본 템플릿
+const RUNNER_TEMPLATES = {
+  c: `#include <stdio.h>
+
+int main(void) {
+    printf("Hello, world!\\n");
+    return 0;
+}
+`,
+
+  cpp: `#include <iostream>
+using namespace std;
+
+int main() {
+    cout << "Hello, world!" << '\\n';
+    return 0;
+}
+`,
+
+  java: `class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello, world!");
+    }
+}
+`,
+
+  python: `print("Hello, world!")
+`,
+};
+
+// 템플릿 적용 함수
+function applyRunnerTemplate(lang, force = false) {
+  if (!runnerSourceEl) return;
+  const template = RUNNER_TEMPLATES[lang];
+  if (!template) return;
+
+  // force = true면 무조건 덮어쓰기, false면 비어 있을 때만
+  if (force || !runnerSourceEl.value.trim()) {
+    runnerSourceEl.value = template;
+  }
+}
+
 function setRunnerStatus(msg) {
   if (runnerStatusEl) runnerStatusEl.textContent = msg || "";
 }
@@ -999,6 +1239,25 @@ if (runnerClearConsoleBtn && runnerConsoleEl) {
   });
 }
 
+const runnerTemplateBtn = document.getElementById("runnerTemplateBtn");
+
+if (runnerTemplateBtn && runnerLanguageEl) {
+  runnerTemplateBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    const lang = runnerLanguageEl.value || "cpp";
+    applyRunnerTemplate(lang, true); // 무조건 덮어쓰기
+    setRunnerStatus("현재 선택된 언어의 기본 코드가 입력되었습니다.");
+  });
+}
+
+// 언어 변경 시 템플릿 자동 적용
+if (runnerLanguageEl) {
+  runnerLanguageEl.addEventListener("change", () => {
+    const lang = runnerLanguageEl.value || "cpp";
+    applyRunnerTemplate(lang, false); // 비어 있을 때만 채우기
+    setRunnerStatus("");              // 상태 메시지 초기화
+  });
+}
 
 // 코드 실행 버튼
 if (runnerRunBtn && runnerLanguageEl && runnerSourceEl && runnerConsoleEl) {
@@ -1219,4 +1478,122 @@ if (solClearBtn && solDescriptionEl && solResultEl) {
       solLoadingOverlay.classList.remove("visible"); // 추가
     }
   });
+}
+
+// =====================
+// 로그인 상태 초기화 & 로그아웃 버튼 연결
+// =====================
+document.addEventListener("DOMContentLoaded", () => {
+  // 0) 마지막으로 사용한 탭 복원 (없으면 기본 runner)
+  let initialTab = "runner";
+  try {
+    const saved = window.localStorage.getItem(TAB_STORAGE_KEY);
+    if (saved) {
+      initialTab = saved;
+    }
+  } catch (e) {
+    // localStorage 사용 불가 시 그냥 runner 유지
+  }
+  switchTab(initialTab);
+
+  // 1) 로그인 상태 확인
+  updateLoginStatus();
+
+  // 2) 학습 기록 탭 초기화 (목록 불러오기 + 에디터 초기화)
+  initHistoryTab();
+
+  // 3) 코드 실행기 기본 템플릿 한 번 채우기 (기본 언어: C++)
+  if (runnerLanguageEl) {
+    const lang = runnerLanguageEl.value || "cpp";
+    applyRunnerTemplate(lang, false);
+  }
+
+  // 4) 로그아웃 버튼 클릭 이벤트
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", async () => {
+      const ok = window.confirm("정말 로그아웃 하시겠습니까?");
+      if (!ok) return;
+
+      await logout();
+      window.location.href = "login.html";
+    });
+  }
+});
+
+// 예: script.js
+
+async function fetchStudyLogs() {
+  const res = await fetch(`${API_BASE}/api/study-logs`, {
+    credentials: "include", // 세션 유지
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error("학습 기록 조회 실패");
+  return data.logs;
+}
+
+async function saveStudyLog(log) {
+  const res = await fetch(`${API_BASE}/api/study-logs`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(log),
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error("학습 기록 저장 실패");
+  return data.log;
+}
+
+// 기존: 서버에 새 학습 기록 저장 (POST)
+async function saveStudyLog(log) {
+  const res = await fetch(`${API_BASE}/api/study-logs`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(log),
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error("학습 기록 저장 실패");
+  return data.log; // { id, problem_id, title, ... }
+}
+
+// 새로 추가: 서버의 기존 기록 수정 (PUT)
+async function updateStudyLogOnServer(id, log) {
+  const res = await fetch(`${API_BASE}/api/study-logs/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(log),
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error("학습 기록 수정 실패");
+  return data.log;
+}
+
+// 새로 추가: 서버의 단일 기록 삭제 (DELETE /:id)
+async function deleteStudyLogOnServer(id) {
+  const res = await fetch(`${API_BASE}/api/study-logs/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error("학습 기록 삭제 실패");
+  return true;
+}
+
+// 새로 추가: 서버의 내 기록 전체 삭제 (DELETE /)
+async function deleteAllStudyLogsOnServer() {
+  const res = await fetch(`${API_BASE}/api/study-logs`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error("전체 학습 기록 삭제 실패");
+  return true;
 }
