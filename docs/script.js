@@ -960,6 +960,14 @@ function setTcStatus(msg) {
 
 const AUTH_BASE = API_BASE; // 편의상 별칭
 
+// 현재 경로 기준으로 로그인 페이지(index.html) URL 만들기
+function getLoginUrl() {
+  const { origin, pathname } = window.location;
+  // /FIXER/app.html → /FIXER/ 로, /app.html → / 로
+  const basePath = pathname.replace(/\/[^\/]*$/, "/");
+  return origin + basePath + "index.html";
+}
+
 async function updateLoginStatus() {
   const nameEl = document.getElementById("sidebarUserName");
   const emailEl = document.getElementById("sidebarUserEmail");
@@ -1516,7 +1524,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!ok) return;
 
       await logout();
-      window.location.href = "login.html";
+      window.location.href = getLoginUrl();
     });
   }
 });
