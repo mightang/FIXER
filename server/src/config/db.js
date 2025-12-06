@@ -1,21 +1,27 @@
 // server/config/db.js
 import Database from "better-sqlite3";
 import path from "path";
-import fs from "fs"; 
+import fs from "fs";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 프로젝트 안에 data/fixer.db 파일을 생성
+// 현재 파일: server/src/config/db.js
+// ⇒ .. ⇒ server/src
+// ⇒ .. ⇒ server
+// ⇒ server/data/fixer.db 사용
 const dbDir = path.join(__dirname, "..", "..", "data");
-const dbPath = new Database(dbPath);
 
 // data 디렉토리가 없으면 먼저 만들어 주기
 if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
 }
 
+// 여기서 경로 문자열을 만들고
+const dbPath = path.join(dbDir, "fixer.db");
+
+// 여기서 실제 DB 인스턴스를 만든다
 const db = new Database(dbPath);
 
 // 테이블 생성 (없으면 생성)
