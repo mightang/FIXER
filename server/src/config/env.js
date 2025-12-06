@@ -22,4 +22,4 @@ export const GOOGLE_REDIRECT_URI =
 export const SESSION_SECRET =
   process.env.SESSION_SECRET || "fixer-session-secret";
 export const FRONTEND_URL =
-  process.env.FRONTEND_URL || "http://localhost:5500/index.html"; // 로컬 개발 시 프론트 주소
+  process.env.FRONTEND_URL || "http://localhost:5500/app.html"; // 로컬 개발 시 프론트 주소
