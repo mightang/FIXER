@@ -1,385 +1,163 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head>
-  <meta charset="UTF-8" />
-  <title>FIXER</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <div class="app">
-    <!-- 왼쪽 사이드바 -->
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <div class="logo">FIXER</div>
-        <button class="sidebar-toggle" id="sidebarToggle" aria-label="사이드바 토글">
-          ⮜
+  <head>
+    <meta charset="UTF-8" />
+    <title>Fixer - 로그인</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- 공통 스타일 (폰트 등) -->
+    <link rel="stylesheet" href="style.css" />
+
+    <style>
+      /* 로그인 전용: 최대한 단순하게 */
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #05070c;
+        background-image: radial-gradient(circle at top, #1f2937 0, #05070c 55%);
+        color: #f9fafb;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+      }
+
+      .login-wrapper {
+        width: 100%;
+        padding: 24px;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .login-card {
+        width: 100%;
+        max-width: 380px;
+        padding: 24px 22px 20px;
+        border-radius: 14px;
+        background: #0b0d13;
+        border: 1px solid #1f2933;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.75);
+        text-align: center;
+      }
+
+      .login-logo {
+        font-size: 1.1rem;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+        color: #e5e7eb;
+      }
+
+      .login-title {
+        font-size: 1.25rem;
+        margin-bottom: 6px;
+      }
+
+      .login-subtitle {
+        font-size: 0.9rem;
+        color: #9ca3af;
+        line-height: 1.5;
+        margin-bottom: 20px;
+      }
+
+      .login-btn {
+        width: 100%;
+        padding: 10px 16px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-size: 0.95rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: #4285f4;
+        color: white;
+        transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.1s ease;
+      }
+
+      .login-btn:hover {
+        filter: brightness(1.05);
+        box-shadow: 0 10px 20px rgba(37, 99, 235, 0.45);
+        transform: translateY(-1px);
+      }
+
+      .login-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 6px 12px rgba(37, 99, 235, 0.35);
+      }
+
+      .google-icon {
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+        background: white;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #4285f4;
+      }
+
+      .login-footnote {
+        margin-top: 14px;
+        font-size: 0.78rem;
+        color: #6b7280;
+        line-height: 1.4;
+      }
+
+      @media (max-width: 480px) {
+        .login-card {
+          padding: 20px 18px 18px;
+          border-radius: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-wrapper">
+      <div class="login-card">
+        <div class="login-logo">FIXER</div>
+        <h1 class="login-title">Google로 로그인</h1>
+        <p class="login-subtitle">
+          코드 실행, 테스트케이스 생성, 풀이 힌트를 이용하려면<br />
+          Google 계정으로 로그인해 주세요.
+        </p>
+
+        <button id="googleLoginBtn" class="login-btn" type="button">
+          <span class="google-icon">G</span>
+          <span>Google 계정으로 계속</span>
         </button>
-      </div>
 
-      <nav class="nav-section">
-        <div class="nav-title">탭</div>
-
-        <!-- 메인: 코드 실행기 -->
-        <button class="nav-item nav-item-main" data-tab="runner">
-          <span class="nav-item-icon">🖥</span>
-          <span class="nav-item-text">코드 실행기</span>
-        </button>
-
-        <button class="nav-item" data-tab="visualizer">
-          <span class="nav-item-icon">🎨</span>
-          <span class="nav-item-text">시각화 도구</span>
-        </button>
-
-        <button class="nav-item" data-tab="testcase">
-          <span class="nav-item-icon">🧪</span>
-          <span class="nav-item-text">테스트 케이스 생성기</span>
-        </button>
-
-        <button class="nav-item" data-tab="solution">
-          <span class="nav-item-icon">💡</span>
-          <span class="nav-item-text">풀이 힌트</span>
-        </button>
-
-        <button class="nav-item" data-tab="history">
-          <span class="nav-item-icon">📝</span>
-          <span class="nav-item-text">문제풀이 기록</span>
-        </button>
-
-        <div class="nav-divider"></div>
-        <div class="nav-quick-title">오늘 푼 문제</div>
-        <div id="todayHistoryShortcuts" class="nav-quick-list">
-          <div class="nav-quick-empty">오늘 기록 없음</div>
+        <div class="login-footnote">
+          로그인 후에는 자동으로 메인 화면으로 이동하며,<br />
+          학습 기록은 계정 기준으로 저장됩니다.
         </div>
-      </nav>
-
-      <!-- 사이드바 하단: 로그인 사용자 정보 + 로그아웃 -->
-      <div class="sidebar-footer">
-        <div class="sidebar-user">
-          <div class="sidebar-user-avatar" id="sidebarUserAvatar">?</div>
-          <div class="sidebar-user-info">
-            <div class="sidebar-user-name" id="sidebarUserName">로그인하지 않음</div>
-            <div class="sidebar-user-email" id="sidebarUserEmail"></div>
-          </div>
-        </div>
-        <button id="logoutBtn" class="sidebar-logout-btn" style="display: none;">
-          로그아웃
-        </button>
       </div>
-    </aside>
-
-    <!-- 오른쪽 메인 영역 -->
-    <div class="content">
-      <main class="main">
-        <!-- 코드 실행기 패널 -->
-        <section class="panel" id="runner">
-          <div class="runner-layout">
-            <!-- 언어 선택 + 실행 버튼 -->
-            <div class="runner-controls">
-              <label for="runnerLanguage">언어</label>
-              <select id="runnerLanguage">
-                <option value="c">C</option>
-                <option value="cpp" selected>C++</option>
-                <option value="java">JAVA</option>
-                <option value="python">python</option>
-              </select>
-
-              <button id="runnerRunBtn" class="runner-button primary">
-                실행
-              </button>
-
-              <span id="runnerStatus" class="runner-status"></span>
-            </div>
-
-            <!-- 코드 / 콘솔 영역 -->
-            <div class="runner-main">
-              <!-- 코드 편집기 -->
-              <div class="runner-editor">
-                <div class="runner-section-header">
-                  <span>코드</span>
-                  <button
-                    id="runnerTemplateBtn"
-                    class="runner-button small"
-                    type="button"
-                  >
-                    기본 코드 넣기
-                  </button>
-                </div>
-                <textarea
-                  id="runnerSource"
-                  spellcheck="false"
-                  placeholder="// 여기에 코드를 입력하거나, '기본 코드 넣기' 버튼을 눌러 예제 코드를 불러올 수 있습니다."
-                ></textarea>
-              </div>
-
-              <!-- 콘솔 (입출력 통합) -->
-              <div class="runner-console">
-                <div class="runner-section-header">
-                  <span>콘솔</span>
-                  <button
-                    id="runnerClearConsoleBtn"
-                    class="runner-button small"
-                    type="button"
-                  >
-                    콘솔 지우기
-                  </button>
-                </div>
-
-                <div class="runner-console-io">
-                  <div class="runner-console-full">
-                    <label for="runnerConsole">터미널</label>
-                    <textarea
-                      id="runnerConsole"
-                      spellcheck="false"
-                      placeholder="여기에 입력을 작성하고 실행하면, 바로 아래에 출력 결과가 이어서 표시됩니다.&#10;예:&#10;1 2"
-                    ></textarea>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- 시각화 도구 패널 -->
-        <section class="panel" id="visualizer">
-          <h1 class="panel-title">시각화 도구</h1>
-          <p class="panel-subtitle">
-            정렬, 그래프, DP 등 알고리즘을 단계별로 시각화할 공간입니다.
-          </p>
-
-          <div class="visualizer-layout">
-            <div class="visualizer-toolbar">
-              <span class="toolbar-label">도형 도구</span>
-              <button class="tool-button" data-tool="text">텍스트</button>
-              <button class="tool-button active" data-tool="circle">정점(원)</button>
-              <button class="tool-button" data-tool="rect">직사각형</button>
-              <button class="tool-button" data-tool="line">간선(직선)</button>
-              <button class="tool-button" data-tool="free">자유형 선</button>
-
-              <div class="toolbar-spacer"></div>
-
-              <button class="tool-button" id="undoBtn">뒤로가기</button>
-              <button class="tool-button" id="redoBtn">복원</button>
-              <button class="tool-button danger" id="clearBoardBtn">보드 초기화</button>
-            </div>
-
-            <div class="canvas-wrapper">
-              <canvas id="drawCanvas"></canvas>
-            </div>
-
-            <p class="visualizer-help">
-              도형 도구를 선택한 뒤 캔버스에서 드래그하여 그립니다.
-              오른쪽 버튼 클릭으로 도형을 삭제할 수 있고,
-              뒤로가기/복원 버튼으로 작업을 되돌리거나 다시 적용할 수 있습니다.
-            </p>
-          </div>
-        </section>
-
-        <!-- 테스트 케이스 생성기 패널 -->
-        <section class="panel" id="testcase">
-          <h1 class="panel-title">테스트 케이스 생성기</h1>
-          <p class="panel-subtitle">
-            문제 정보를 입력하고, AI에게 적절한 테스트 케이스 생성을 요청할 수 있습니다.
-          </p>
-
-          <div class="testcase-layout">
-            <!-- 왼쪽: 입력 폼 -->
-            <div class="testcase-form">
-              <div class="tc-row">
-                <label for="tcSite">사이트</label>
-                <select id="tcSite">
-                  <option value="BOJ">BOJ</option>
-                  <option value="Programmers">Programmers</option>
-                  <option value="LeetCode">LeetCode</option>
-                  <option value="Custom">기타</option>
-                </select>
-              </div>
-
-              <div class="tc-row">
-                <label for="tcStatement">문제 설명 / 입력·출력 형식 / 제약</label>
-                <textarea
-                  id="tcStatement"
-                  placeholder="문제 설명에서 입력 형식, 출력 형식, 제약 조건 부분을 중심으로 붙여 넣어 주세요."
-                ></textarea>
-              </div>
-
-              <div class="tc-row">
-                <label for="tcExampleRaw">예시 입력 (입력/출력 블록 전체, 선택)</label>
-                <textarea
-                  id="tcExampleRaw"
-                  placeholder="문제에서 제공하는 예시 입력/출력을 그대로 붙여 넣어 주세요.&#10;예:&#10;[입력] 블록과 [출력] 블록을 통째로 복사"
-                ></textarea>
-              </div>
-
-              <div class="tc-actions">
-                <button id="tcGenerateBtn" class="tc-button primary">
-                  AI로 테스트 케이스 생성
-                </button>
-                <button id="tcClearBtn" class="tc-button">
-                  입력 초기화
-                </button>
-                <span id="tcStatus" class="tc-status"></span>
-              </div>
-            </div>
-
-
-
-            <!-- 오른쪽: 결과 출력 -->
-            <div class="testcase-output">
-              <div class="testcase-output-header">
-                <span>생성된 테스트 케이스</span>
-                <button id="tcCopyBtn" class="tc-button small">
-                  전체 복사
-                </button>
-              </div>
-
-              <div class="testcase-output-body">
-                <!-- 실제 결과 -->
-                <pre id="tcResult" class="tc-result-placeholder"></pre>
-
-                <!-- 로딩 오버레이 -->
-                <div id="tcLoadingOverlay" class="tc-loading-overlay">
-                  <div class="tc-spinner"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- 풀이 힌트 패널 -->
-        <section class="panel" id="solution">
-          <h1 class="panel-title">풀이 힌트</h1>
-          <p class="panel-subtitle">
-            문제 전문을 붙여 넣으면, 정답 코드 대신 로직/풀이 아이디어를 단계별로 설명해 줍니다.
-          </p>
-
-          <div class="solution-layout">
-            <div class="solution-left">
-              <div class="solution-actions">
-                <button id="solRequestBtn" class="runner-button primary">
-                  풀이 힌트 요청
-                </button>
-                <span id="solStatus" class="runner-status"></span>
-              </div>
-
-              <div class="form-group">
-                <label for="solDescription">문제 전문</label>
-                <textarea
-                  id="solDescription"
-                  rows="14"
-                  spellcheck="false"
-                  placeholder="문제 설명 / 입력 및 출력 형식 / 제약 조건을 그대로 붙여 넣어 주세요."
-                ></textarea>
-              </div>
-            </div>
-
-            <div class="solution-right">
-              <div class="solution-result-header">
-                <span>AI 풀이 힌트</span>
-                <button
-                  id="solClearBtn"
-                  class="runner-button small"
-                  type="button"
-                >
-                  내용 지우기
-                </button>
-              </div>
-
-              <div class="solution-result" id="solResult">
-                <div id="solLoadingOverlay" class="tc-loading-overlay">
-                  <div class="tc-spinner"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- 문제풀이 기록 패널 -->
-        <section class="panel" id="history">
-          <h1 class="panel-title">문제풀이 기록</h1>
-          <p class="panel-subtitle">
-            내가 푼 알고리즘 문제를
-            블로그 글처럼 정리하고 수정·삭제할 수 있는 공간입니다.
-          </p>
-
-          <div class="history-layout">
-            <!-- 목록 화면 -->
-            <div class="history-list-view" id="historyListView">
-              <div class="history-header-row">
-                <span class="history-count" id="historyCount">0개 기록</span>
-                <button id="newEntryBtn" class="history-button primary">
-                  새 기록
-                </button>
-                <button id="deleteAllBtn" type="button" class="history-button danger">
-                  모두 삭제
-                </button>
-              </div>
-              <ul class="history-list" id="historyList">
-                <!-- JS로 문제풀이 기록 아이템들이 들어옴 -->
-              </ul>
-              <p class="history-list-hint">
-                왼쪽 목록에서 문제를 선택해 열람하거나,
-                <strong>새 기록</strong> 버튼을 눌러 새 문제풀이 글을 작성할 수 있습니다.
-              </p>
-            </div>
-
-            <!-- 글쓰기/수정 화면 -->
-            <div class="history-editor-view" id="historyEditorView">
-              <div class="history-editor-header">
-                <span id="editorModeLabel" class="history-editor-title">
-                  새 문제풀이 기록 작성
-                </span>
-                <button id="backToListBtn" class="history-button">
-                  목록으로
-                </button>
-              </div>
-
-              <div class="history-editor">
-                <div class="history-form-row">
-                  <label for="entrySite">사이트</label>
-                  <select id="entrySite">
-                    <option value="BOJ">BOJ</option>
-                    <option value="Programmers">Programmers</option>
-                    <option value="LeetCode">LeetCode</option>
-                  </select>
-                </div>
-
-                <div class="history-form-row">
-                  <label for="entryTitle">문제 제목/번호</label>
-                  <input
-                    type="text"
-                    id="entryTitle"
-                    placeholder="예: BOJ 2805 나무 자르기 / LeetCode 53. Maximum Subarray"
-                  />
-                </div>
-
-                <div class="history-form-row history-textarea-row">
-                  <label for="entryContent">내용</label>
-                  <textarea
-                    id="entryContent"
-                    placeholder="아이디어, 접근법, 코드, 실수, 복기 등을 자유롭게 작성하세요."
-                  ></textarea>
-                </div>
-
-                <div class="history-actions">
-                  <span id="historyStatus" class="history-status"></span>
-                  <div class="history-actions-buttons">
-                    <button id="saveEntryBtn" type="button" class="history-button primary">
-                      저장
-                    </button>
-                    <button id="deleteEntryBtn" type="button" class="history-button danger" disabled>
-                      삭제
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
     </div>
-  </div>
 
-  <script src="script.js"></script>
-</body>
+    <script>
+      // 로컬(localhost)에서는 3000번 포트,
+      // 그 외(깃허브 페이지 등)에서는 Render 백엔드로
+      const BACKEND_BASE =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1"
+          ? "http://localhost:3000"
+          : "https://fixer-backend-xj93.onrender.com";
+
+      console.log("BACKEND_BASE =", BACKEND_BASE);
+
+      document
+        .getElementById("googleLoginBtn")
+        .addEventListener("click", () => {
+          window.location.href = `${BACKEND_BASE}/auth/google`;
+        });
+    </script>
+  </body>
 </html>
