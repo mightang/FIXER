@@ -2,6 +2,7 @@
 import express from "express";
 import passport from "passport";
 import { FRONTEND_URL } from "../config/env.js";
+import db from "../config/db.js";
 
 const router = express.Router();
 
@@ -37,8 +38,6 @@ router.get("/fail", (req, res) => {
   });
 });
 
-// 4) 현재 로그인 상태 확인
-//    프론트에서 /auth/me를 호출해서 로그인 여부/유저 정보 확인
 router.get("/me", (req, res) => {
   if (!req.user) {
     return res.json({
@@ -47,11 +46,73 @@ router.get("/me", (req, res) => {
     });
   }
 
+  // 여기서 관리자(테스트) 계정인지 판정
+  const isAdmin =
+    req.user.google_id === "local:test" ||
+    req.user.email === "admin@test.local" ||
+    req.user.name === "테스트 계정";
+
+  // 프론트로 넘길 안전한 유저 정보
+  const safeUser = {
+    id: req.user.id,
+    google_id: req.user.google_id,
+    email: req.user.email,
+    name: req.user.name,
+    isAdmin,
+  };
+
   res.json({
     loggedIn: true,
-    user: req.user,
+    user: safeUser,
   });
 });
+
+// 관리자 / 테스트 계정용 아이디/비밀번호 로그인
+router.post("/admin-login", (req, res, next) => {
+  const { username, password } = req.body || {};
+
+  // 고정 관리자 계정 검증
+  if (username !== "test" || password !== "1234") {
+    return res.status(401).json({
+      ok: false,
+      message: "아이디 또는 비밀번호가 올바르지 않습니다.",
+    });
+  }
+
+  try {
+    // users 테이블에 이 계정이 없으면 생성
+    const googleId = "local:test"; // 구글 계정 대신 쓰는 내부용 ID
+    const email = "admin@test.local";
+    const name = "테스트 계정";
+
+    const insertStmt = db.prepare(
+      `INSERT OR IGNORE INTO users (google_id, email, name)
+       VALUES (?, ?, ?)`
+    );
+    insertStmt.run(googleId, email, name);
+
+    // 방금(또는 기존) 생성된 유저 조회
+    const user = db
+      .prepare(
+        "SELECT id, google_id, email, name FROM users WHERE google_id = ?"
+      )
+      .get(googleId);
+
+    // passport가 제공하는 req.login으로 세션에 user 심기
+    req.login(user, err => {
+      if (err) return next(err);
+
+      return res.json({
+        ok: true,
+        user,
+      });
+    });
+  } catch (err) {
+    console.error("admin-login error:", err);
+    next(err);
+  }
+});
+
 
 // 5) 로그아웃
 router.post("/logout", (req, res, next) => {

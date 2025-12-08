@@ -5,14 +5,34 @@ import { openai } from "./openaiClient.js";
  * 테스트 케이스 생성 서비스
  * @param {object} params 프론트에서 넘어온 정보
  */
+// src/services/testcaseService.js
+function looksLikeGarbage(text = "") {
+  const trimmed = text.trim();
+  if (!trimmed) return true;
+  const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
+  if (trimmed.length < 30 || wordCount < 5) return true;
+  const normalized = trimmed.replace(/\s+/g, "");
+  if (/^[a-zA-Z]+$/.test(normalized) && normalized.length <= 8) return true;
+  return false;
+}
+
 export async function generateTestcases(params = {}) {
   const {
     site = "BOJ",
     statement = "",
     difficulty = "auto",
     style = "mixed",
-    examples = [], // [{ input, output }]
+    examples = [],
   } = params;
+
+  if (looksLikeGarbage(statement)) {
+    return {
+      ok: false,
+      message:
+        "문제 설명이 너무 짧거나 의미를 파악하기 어렵습니다.\n" +
+        "알고리즘 문제 전체를 붙여 넣어 주세요.",
+    };
+  }
 
   // 1) 모델에게 줄 설명 (역할)
   const instructions = `

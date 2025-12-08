@@ -990,11 +990,25 @@ async function updateLoginStatus() {
         "로그인 사용자";
       const email = data.user.email || "";
 
-      nameEl.textContent = name;
-      if (emailEl) emailEl.textContent = email;
+      // ✅ 관리자/테스트 계정 여부 확인
+      // 1) 백엔드에서 내려주는 isAdmin 플래그를 우선 사용
+      // 2) 혹시 몰라서 google_id / email / name도 한 번 더 체크
+      const isAdminAccount =
+        data.user.isAdmin === true ||
+        data.user.google_id === "local:test" ||
+        data.user.email === "admin@test.local" ||
+        data.user.name === "테스트 계정";
+
+      if (isAdminAccount) {
+        // 이름 라인에 '(관리자용 계정)' 붙이기
+        nameEl.textContent = `${name} (관리자용 계정)`;
+        if (emailEl) emailEl.textContent = "관리자용 테스트 계정";
+      } else {
+        nameEl.textContent = name;
+        if (emailEl) emailEl.textContent = email;
+      }
 
       if (avatarEl) {
-        // 나중에 백엔드에서 picture 필드 보내면 여기서 사용
         if (data.user.picture) {
           avatarEl.style.backgroundImage = `url(${data.user.picture})`;
           avatarEl.classList.add("has-image");
@@ -1069,7 +1083,27 @@ function formatTestcaseResult(data) {
 async function handleGenerateTestcases() {
   if (!tcGenerateBtn) return;
 
-  // 예시 입력 블록 하나만 사용 (입력/출력 섞여 있어도 그대로 전달)
+  const statement = tcStatementEl ? tcStatementEl.value.trim() : "";
+
+  if (!statement) {
+    alert("문제 설명을 먼저 입력해 주세요.");
+    return;
+  }
+
+  // 🔹 문제 설명 최소 길이/단어 수 체크
+  const wordCount = statement.split(/\s+/).filter(Boolean).length;
+  if (statement.length < 30 || wordCount < 5) {
+    alert("문제 설명을 조금 더 자세히 입력해 주세요.\n(최소 30자, 5단어 이상 권장)");
+    return;
+  }
+
+  // 🔹 알파벳만 잔뜩인데 짧은 경우 (asdf류)
+  const normalized = statement.replace(/\s+/g, "");
+  if (/^[a-zA-Z]+$/.test(normalized) && normalized.length <= 8) {
+    alert("문제 전문이 아닌 것 같습니다. 알고리즘 문제 전체를 붙여 넣어 주세요.");
+    return;
+  }
+
   const examples = [];
   if (tcExampleRawEl) {
     const raw = tcExampleRawEl.value.trim();
@@ -1082,9 +1116,7 @@ async function handleGenerateTestcases() {
 
   const payload = {
     site: tcSiteEl ? tcSiteEl.value : undefined,
-    statement: tcStatementEl ? tcStatementEl.value.trim() : "",
-    // difficulty, style은 더 이상 입력받지 않지만,
-    // 백엔드에서 기본값이 있으므로 생략해도 됨.
+    statement,
     examples,
   };
 
@@ -1423,6 +1455,20 @@ if (solRequestBtn && solDescriptionEl) {
       return;
     }
 
+    // 🔹 1) 너무 짧은 입력(문장 최소 길이 / 단어 수 체크)
+    const wordCount = description.split(/\s+/).filter(Boolean).length;
+    if (description.length < 30 || wordCount < 5) {
+      alert("문제 설명을 조금 더 자세히 입력해 주세요.\n(최소 30자, 5단어 이상 권장)");
+      return;
+    }
+
+    // 🔹 2) 진짜 쌩잡글(asdf, qwer, zxcv 같은 것) 잡기
+    const normalized = description.replace(/\s+/g, "");
+    if (/^[a-zA-Z]+$/.test(normalized) && normalized.length <= 8) {
+      alert("문제 전문이 아닌 것 같습니다. 알고리즘 문제 전체를 붙여 넣어 주세요.");
+      return;
+    }
+
     setSolutionStatus("AI에게 풀이 힌트를 요청 중입니다...", false);
 
     // 이전 결과 잠깐 비우고 로딩 오버레이 켜기
@@ -1554,22 +1600,6 @@ async function saveStudyLog(log) {
   return data.log;
 }
 
-// 기존: 서버에 새 학습 기록 저장 (POST)
-async function saveStudyLog(log) {
-  const res = await fetch(`${API_BASE}/api/study-logs`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify(log),
-  });
-  const data = await res.json();
-  if (!data.ok) throw new Error("학습 기록 저장 실패");
-  return data.log; // { id, problem_id, title, ... }
-}
-
-// 새로 추가: 서버의 기존 기록 수정 (PUT)
 async function updateStudyLogOnServer(id, log) {
   const res = await fetch(`${API_BASE}/api/study-logs/${id}`, {
     method: "PUT",

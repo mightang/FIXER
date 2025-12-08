@@ -1,21 +1,48 @@
 // src/services/solutionService.js
 import { openai } from "./openaiClient.js";
 
+function looksLikeGarbage(text = "") {
+  const trimmed = text.trim();
+  if (!trimmed) return true;
+
+  // 너무 짧으면 거르고
+  const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
+  if (trimmed.length < 30 || wordCount < 5) return true;
+
+  // 공백 제거 후 알파벳만으로 8자 이하면 asdf류로 취급
+  const normalized = trimmed.replace(/\s+/g, "");
+  if (/^[a-zA-Z]+$/.test(normalized) && normalized.length <= 8) {
+    return true;
+  }
+
+  return false;
+}
+
 /**
  * 풀이 힌트/설명 생성 서비스
  * @param {object} params
  */
 export async function generateSolution(params = {}) {
   const {
-    site = "BOJ",        // BOJ, Programmers, etc...
-    problemId = "",      // 2606 같은 번호 (선택)
-    title = "",          // 문제 제목 (선택)
-    description = "",    // 문제 전문 / 설명
-    userCode = "",       // 내가 시도한 코드 (선택)
-    errorMessage = "",   // 컴파일/런타임 에러 메시지 (선택)
-    mode = "hint",       // "hint" | "outline" | "full"
+    site = "BOJ",
+    problemId = "",
+    title = "",
+    description = "",
+    userCode = "",
+    errorMessage = "",
+    mode = "hint",
   } = params;
 
+  // 🔹 이상한 입력(너무 짧거나 asdf류)이면 바로 리턴
+  if (looksLikeGarbage(description)) {
+    return {
+      ok: false,
+      message:
+        "문제 설명이 너무 짧거나 의미를 파악하기 어렵습니다.\n" +
+        "알고리즘 문제 전체를 붙여 넣어 주세요.",
+    };
+  }
+  
   const instructions = `
 너는 알고리즘 문제를 설명해 주는 한국어 튜터이다.
 

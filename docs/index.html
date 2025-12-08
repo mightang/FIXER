@@ -118,6 +118,57 @@
           border-radius: 12px;
         }
       }
+
+      /* 관리자/테스트 계정 로그인 영역 */
+      .admin-login {
+        margin-top: 24px;
+        padding-top: 16px;
+        border-top: 1px solid #e5e7eb;
+      }
+
+      .admin-login-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: white;
+        margin-bottom: 4px;
+      }
+
+      .admin-login-description {
+        font-size: 0.78rem;
+        color: #6b7280;
+        margin-bottom: 10px;
+      }
+
+      .admin-input-row {
+        margin-bottom: 8px;
+      }
+
+      .admin-input {
+        width: 100%;
+        padding: 9px 10px;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        font-size: 0.85rem;
+        outline: none;
+        box-sizing: border-box;
+      }
+
+      .admin-input:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+      }
+
+      .admin-login-btn {
+        margin-top: 4px;
+        background: linear-gradient(135deg, #4b5563, #111827); /* Google 버튼이랑 구분되게 */
+      }
+
+      .admin-login-hint {
+        margin-top: 6px;
+        font-size: 0.75rem;
+        color: #6b7280;
+      }
+
     </style>
   </head>
   <body>
@@ -134,6 +185,40 @@
           <span class="google-icon">G</span>
           <span>Google 계정으로 계속</span>
         </button>
+
+        <div class="admin-login">
+          <div class="admin-login-title">테스트 계정으로 로그인</div>
+          <div class="admin-login-description">
+            시연용 계정으로 Google 로그인 없이 바로 접속할 수 있습니다.
+          </div>
+
+          <div class="admin-input-row">
+            <input
+              id="adminIdInput"
+              class="admin-input"
+              type="text"
+              placeholder="아이디 (test)"
+              autocomplete="username"
+            />
+          </div>
+          <div class="admin-input-row">
+            <input
+              id="adminPwInput"
+              class="admin-input"
+              type="password"
+              placeholder="비밀번호 (1234)"
+              autocomplete="current-password"
+            />
+          </div>
+
+          <button id="adminLoginBtn" class="login-btn admin-login-btn" type="button">
+            테스트 계정으로 로그인
+          </button>
+
+          <div class="admin-login-hint">
+            기본 계정: <strong>ID test / PW 1234</strong>
+          </div>
+        </div>
 
         <div class="login-footnote">
           로그인 후에는 자동으로 메인 화면으로 이동하며,<br />
@@ -158,6 +243,48 @@
         .addEventListener("click", () => {
           window.location.href = `${BACKEND_BASE}/auth/google`;
         });
+      
+      const adminLoginBtn = document.getElementById("adminLoginBtn");
+      if (adminLoginBtn) {
+        adminLoginBtn.addEventListener("click", async () => {
+          const idInput = document.getElementById("adminIdInput");
+          const pwInput = document.getElementById("adminPwInput");
+
+          const username = idInput?.value.trim();
+          const password = pwInput?.value || "";
+
+          if (!username || !password) {
+            alert("아이디와 비밀번호를 입력해 주세요.");
+            return;
+          }
+
+          try {
+            const res = await fetch(`${BACKEND_BASE}/auth/admin-login`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              credentials: "include", // 세션 쿠키 받기
+              body: JSON.stringify({ username, password }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok || !data.ok) {
+              alert(data.message || "로그인에 실패했습니다.");
+              return;
+            }
+
+            // app.html로 이동 (동일 디렉터리 기준)
+            const { origin, pathname } = window.location;
+            const basePath = pathname.replace(/\/[^\/]*$/, "/");
+            window.location.href = origin + basePath + "app.html";
+          } catch (err) {
+            console.error("관리자 로그인 오류:", err);
+            alert("로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+          }
+        });
+      }
     </script>
   </body>
 </html>
